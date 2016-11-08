@@ -319,6 +319,78 @@ rclpy_get_ready_subscriptions(PyObject * Py_UNUSED(self), PyObject * args)
 }
 
 static PyObject *
+rclpy_wait_set_clear_guard_conditions(PyObject * Py_UNUSED(self), PyObject * args)
+{
+  PyObject * pywait_set;
+
+  if (!PyArg_ParseTuple(args, "O", &pywait_set)) {
+    return NULL;
+  }
+
+  rcl_wait_set_t * wait_set = (rcl_wait_set_t *)PyCapsule_GetPointer(pywait_set, NULL);
+  rcl_ret_t ret = rcl_wait_set_clear_guard_conditions(wait_set);
+  if (ret != RCL_RET_OK) {
+    PyErr_Format(PyExc_RuntimeError,
+      "Failed to clear guard conditions from wait set: %s", rcl_get_error_string_safe());
+    return NULL;
+  }
+  Py_RETURN_NONE;
+}
+
+static PyObject *
+rclpy_wait_set_add_guard_condition(PyObject * Py_UNUSED(self), PyObject * args)
+{
+  PyObject * pywait_set;
+  PyObject * pyguard_condition;
+
+  if (!PyArg_ParseTuple(args, "OO", &pywait_set, &pyguard_condition)) {
+    return NULL;
+  }
+
+  rcl_wait_set_t * wait_set = (rcl_wait_set_t *)PyCapsule_GetPointer(pywait_set, NULL);
+  rcl_guard_condition_t * guard_condition =
+    (rcl_guard_condition_t *)PyCapsule_GetPointer(pyguard_condition, NULL);
+  rcl_ret_t ret = rcl_wait_set_add_guard_condition(wait_set, guard_condition);
+  if (ret != RCL_RET_OK) {
+    PyErr_Format(PyExc_RuntimeError,
+      "Failed to add guard_condition to wait set: %s", rcl_get_error_string_safe());
+    return NULL;
+  }
+  Py_RETURN_NONE;
+}
+
+static PyObject *
+rclpy_wait_set_add_graph_guard_condition(PyObject * Py_UNUSED(self), PyObject * args)
+{
+  PyObject * pynode;
+  PyObject * pywait_set;
+
+  if (!PyArg_ParseTuple(args, "OO", &pynode, &pywait_set)) {
+    return NULL;
+  }
+  rcl_node_t * node = (rcl_node_t *)PyCapsule_GetPointer(pynode, NULL);
+  if (!node) {
+    PyErr_Format(PyExc_RuntimeError, "node handle is null");
+    return NULL;
+  }
+  rcl_wait_set_t * wait_set = (rcl_wait_set_t *)PyCapsule_GetPointer(pywait_set, NULL);
+  if (!wait_set) {
+    PyErr_Format(PyExc_RuntimeError, "wait_set is null");
+    return NULL;
+  }
+  const rcl_guard_condition_t * graph_guard_condition =
+    rcl_node_get_graph_guard_condition(node);
+  rcl_ret_t ret = rcl_wait_set_add_guard_condition(
+    wait_set, graph_guard_condition);
+  if (ret != RCL_RET_OK) {
+    PyErr_Format(PyExc_RuntimeError,
+      "Failed to add graph guard_condition to wait set: %s", rcl_get_error_string_safe());
+    return NULL;
+  }
+  Py_RETURN_NONE;
+}
+
+static PyObject *
 rclpy_wait(PyObject * Py_UNUSED(self), PyObject * args)
 {
   PyObject * pywait_set;
@@ -436,6 +508,16 @@ static PyMethodDef rclpy_methods[] = {
 
   {"rclpy_get_ready_subscriptions", rclpy_get_ready_subscriptions, METH_VARARGS,
    "List non null subscriptions in waitset."},
+
+  {"rclpy_wait_set_clear_guard_conditions", rclpy_wait_set_clear_guard_conditions, METH_VARARGS,
+   "rclpy_wait_set_clear_guard_conditions."},
+
+  {"rclpy_wait_set_add_guard_condition", rclpy_wait_set_add_guard_condition, METH_VARARGS,
+   "rclpy_wait_set_add_guard_condition."},
+
+  {"rclpy_wait_set_add_graph_guard_condition",
+   rclpy_wait_set_add_graph_guard_condition, METH_VARARGS,
+   "rclpy_wait_set_add_graph_guard_condition."},
 
   {"rclpy_wait", rclpy_wait, METH_VARARGS,
    "rclpy_wait."},
