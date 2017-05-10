@@ -57,7 +57,6 @@ if(WIN32)
 endif()
 
 target_link_libraries(${PROJECT_NAME}
-  ${rcl_LIBRARIES}
   ${PythonExtra_LIBRARIES}
 )
 
