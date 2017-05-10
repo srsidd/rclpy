@@ -164,7 +164,7 @@ class Node:
         # ensure that the passed node contains a valid capsule
         class_ = self.handle.__class__
         if not class_ or class_.__name__ != 'PyCapsule':
-            raise ValueError()
+            raise ValueError('The node handle must be a PyCapsule')
 
         for sub in self.subscriptions:
             ret &= _rclpy.rclpy_destroy_node_entity(
